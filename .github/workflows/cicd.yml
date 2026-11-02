@@ -20,7 +20,7 @@ jobs:
         cache: maven
     # Compile the Java project using Maven    
     - name: compile with Maven
-      run: mvn compile
+      run: mvn clean compile
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
