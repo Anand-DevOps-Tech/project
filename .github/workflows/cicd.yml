@@ -1,0 +1,45 @@
+name: CICD pipeline java project
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  #This job will compile the Java project using Maven
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout the repository
+    - uses: actions/checkout@v4
+    # Set up JDK 17 and cache Maven dependencies
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    # Compile the Java project using Maven    
+    - name: compile with Maven
+      run: mvn compile
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Install trivy security scanner
+      - name: install trivy
+        run: |
+          sudo apt-get install wget gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+      # Run Trivy filesystem scan
+      - name: Trivy filesystem scan
+        run: trivy fs --format table -o fs-report.txt .
+      # upload the filesystem scan report as an artifact
+      - name: upload filesystem scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: fs-report.txt
